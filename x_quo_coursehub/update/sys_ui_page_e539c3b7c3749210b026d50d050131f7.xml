@@ -3,12 +3,18 @@
         <category>general</category>
         <client_script><![CDATA[var currentUser;
 
-function populateLearners() {
+function setCurrentUser() {
+    var selection = document.getElementById("learners");
+    var user = selection.options[selection.selectedIndex].value;
+    currentUser = user;
+}
+
+function populateLearnerOptions() {
     var requestBody = "";
     var parsedResponse;
 
     var client = new XMLHttpRequest();
-    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_learner?sysparm_fields=sys_id%2Cuser_account");
+    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_learner?sysparm_fields=user_account");
 
     client.setRequestHeader('Accept', 'application/json');
     client.setRequestHeader('Content-Type', 'application/json');
@@ -19,13 +25,51 @@ function populateLearners() {
     client.onreadystatechange = function() {
         if (this.readyState == this.DONE) {
             parsedResponse = JSON.parse(this.response)["result"];
-            var select = document.getElementById("learners");
+            var learners = document.getElementById("learners");
 
             for (const learner of parsedResponse) {
                 var option = document.createElement('option');
-                option.text = option.value = learner.sys_id;
-                select.add(option, 0);
+                option.text = option.value = learner.user_account.value;
+                learners.add(option, 0);
             }
+
+            // TODO: debug why option.text is set before getLearnerName() finishes getting response
+            // var learnerOptions = document.getElementById("learners").options;
+            // var length = learnerOptions.length;
+            // console.log(length);
+            // for (let index = 0; index <= length; index++) {
+            //     console.log(learnerOptions[index].text);
+            //     var learnerName = getLearnerName(learnerOptions[index].value);
+            //     console.log("learnerName = " + learnerName);
+
+            //     option.text = learnerName;
+            //     console.log("option.text = " + option.text);
+            // }
+        }
+    };
+    client.send(requestBody);
+}
+
+// TODO: update dropdown learner IDs to names
+function getLearnerName(userAccountValue) {
+    var requestBody = "";
+    var name;
+
+    var client = new XMLHttpRequest();
+
+    client.open("get", "https://dev201115.service-now.com/api/now/table/sys_user?sysparm_fields=name&sys_id=" + userAccountValue);
+
+    client.setRequestHeader('Accept', 'application/json');
+    client.setRequestHeader('Content-Type', 'application/json');
+
+    //Eg. UserName="admin", Password="admin" for this code sample.
+    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+
+    client.onreadystatechange = function() {
+        if (this.readyState == this.DONE) {
+            name = JSON.parse(this.response)["result"][0].name;
+            console.log(name)
+            return name;
         }
     };
     client.send(requestBody);
@@ -69,7 +113,6 @@ client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7Quy
 client.onreadystatechange = function() {
     if (this.readyState == this.DONE) {
         parsedResponse = JSON.parse(this.response)["result"];
-        console.log(parsedResponse[0]);
         for (const course of parsedResponse) {
             displayCourseDetails(course);
         }
@@ -78,7 +121,7 @@ client.onreadystatechange = function() {
 
 client.send(requestBody);
 
-populateLearners();]]></client_script>
+populateLearnerOptions();]]></client_script>
         <description/>
         <direct>false</direct>
         <endpoint>x_quo_coursehub_course-list.do</endpoint>
@@ -105,10 +148,12 @@ populateLearners();]]></client_script>
 
     <body>
 
-        <label for="learners">Active Learner:</label>
+        <label for="learners">Active Learner: </label>
 
         <select name="learners" id="learners">
         </select>
+
+        <button type="button" onclick="setCurrentUser()">Set Current Learner</button>
 
         <table id="course-list-table">
             <tr>
@@ -137,14 +182,14 @@ populateLearners();]]></client_script>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2024-09-29 13:46:03</sys_created_on>
         <sys_id>e539c3b7c3749210b026d50d050131f7</sys_id>
-        <sys_mod_count>62</sys_mod_count>
+        <sys_mod_count>101</sys_mod_count>
         <sys_name>course-list</sys_name>
         <sys_package display_value="CourseHub" source="x_quo_coursehub">d7affc501bf0ded0afce657a234bcb67</sys_package>
         <sys_policy/>
         <sys_scope display_value="CourseHub">d7affc501bf0ded0afce657a234bcb67</sys_scope>
         <sys_update_name>sys_ui_page_e539c3b7c3749210b026d50d050131f7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2024-09-29 16:34:01</sys_updated_on>
+        <sys_updated_on>2024-09-29 17:39:03</sys_updated_on>
     </sys_ui_page>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>e539c3b7c3749210b026d50d050131f7</id>
