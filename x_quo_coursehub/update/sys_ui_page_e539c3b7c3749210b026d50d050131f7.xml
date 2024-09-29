@@ -1,7 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ui_page">
     <sys_ui_page action="INSERT_OR_UPDATE">
         <category>general</category>
-        <client_script><![CDATA[function displayCourseDetails(data) {
+        <client_script><![CDATA[var currentUser;
+
+function populateLearners() {
+    var requestBody = "";
+    var parsedResponse;
+
+    var client = new XMLHttpRequest();
+    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_learner?sysparm_fields=sys_id%2Cuser_account");
+
+    client.setRequestHeader('Accept', 'application/json');
+    client.setRequestHeader('Content-Type', 'application/json');
+
+    //Eg. UserName="admin", Password="admin" for this code sample.
+    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+
+    client.onreadystatechange = function() {
+        if (this.readyState == this.DONE) {
+            parsedResponse = JSON.parse(this.response)["result"];
+            var select = document.getElementById("learners");
+
+            for (const learner of parsedResponse) {
+                var option = document.createElement('option');
+                option.text = option.value = learner.sys_id;
+                select.add(option, 0);
+            }
+        }
+    };
+    client.send(requestBody);
+}
+
+function displayCourseDetails(data) {
     var table = document.getElementById("course-list-table");
     var row = table.insertRow();
 
@@ -18,7 +48,7 @@
 }
 
 function subscribeToCourse() {
-
+    // if currentUser is not null, 
 }
 
 // TODO parse course duration
@@ -28,7 +58,7 @@ var requestBody = "";
 var parsedResponse;
 
 var client = new XMLHttpRequest();
-client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription&sysparm_limit=10");
+client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription");
 
 client.setRequestHeader('Accept', 'application/json');
 client.setRequestHeader('Content-Type', 'application/json');
@@ -45,34 +75,40 @@ client.onreadystatechange = function() {
         }
     }
 };
-client.send(requestBody);]]></client_script>
+
+client.send(requestBody);
+
+populateLearners();]]></client_script>
         <description/>
         <direct>false</direct>
         <endpoint>x_quo_coursehub_course-list.do</endpoint>
         <html><![CDATA[<?xml version="1.0" encoding="utf-8" ?>
 <j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="null" xmlns:g2="null">
-<style>
-table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
-}
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
 
-td, th {
-  border: 1px solid #dddddd;
-  text-align: left;
-  padding: 8px;
-}
+        td,
+        th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
 
-tr:nth-child(even) {
-  background-color: #dddddd;
-}
-</style>
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
 
     <body>
 
-        <div id="response"></div>
-        <div id="description"></div>
+        <label for="learners">Active Learner:</label>
+
+        <select name="learners" id="learners">
+        </select>
 
         <table id="course-list-table">
             <tr>
@@ -101,14 +137,14 @@ tr:nth-child(even) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2024-09-29 13:46:03</sys_created_on>
         <sys_id>e539c3b7c3749210b026d50d050131f7</sys_id>
-        <sys_mod_count>50</sys_mod_count>
+        <sys_mod_count>62</sys_mod_count>
         <sys_name>course-list</sys_name>
         <sys_package display_value="CourseHub" source="x_quo_coursehub">d7affc501bf0ded0afce657a234bcb67</sys_package>
         <sys_policy/>
         <sys_scope display_value="CourseHub">d7affc501bf0ded0afce657a234bcb67</sys_scope>
         <sys_update_name>sys_ui_page_e539c3b7c3749210b026d50d050131f7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2024-09-29 15:46:19</sys_updated_on>
+        <sys_updated_on>2024-09-29 16:34:01</sys_updated_on>
     </sys_ui_page>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>e539c3b7c3749210b026d50d050131f7</id>
