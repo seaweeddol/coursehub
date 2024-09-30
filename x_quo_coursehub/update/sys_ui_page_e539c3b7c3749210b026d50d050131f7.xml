@@ -11,9 +11,7 @@ function setCurrentUser() {
     currentUserText.innerHTML = "Current learner: " + currentUser;
 }
 
-function sendRequest(requestType, requestURL, onSuccessFunction) {
-    var requestBody = "";
-
+function sendRequest(requestBody, requestType, requestURL, onSuccessFunction) {
     var client = new XMLHttpRequest();
     client.open(requestType, requestURL);
 
@@ -32,67 +30,49 @@ function sendRequest(requestType, requestURL, onSuccessFunction) {
     client.send(requestBody);
 }
 
-function populateLearnerOptions() {
-    var requestBody = "";
-    var parsedResponse;
+function populateLearnerOptions(response) {
+    var parsedResponse = JSON.parse(response)["result"];
+    var learners = document.getElementById("learners");
 
-    var client = new XMLHttpRequest();
-    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_learner?sysparm_fields=sys_id%2Cuser_account");
+    for (const learner of parsedResponse) {
+        var option = document.createElement('option');
+        option.text = option.value = learner.sys_id;
+        learners.add(option, 0);
+        setCurrentUser();
+    }
 
-    client.setRequestHeader('Accept', 'application/json');
-    client.setRequestHeader('Content-Type', 'application/json');
-
-    //Eg. UserName="admin", Password="admin" for this code sample.
-    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
-
-    client.onreadystatechange = function() {
-        if (this.readyState == this.DONE) {
-            parsedResponse = JSON.parse(this.response)["result"];
-            var learners = document.getElementById("learners");
-
-            for (const learner of parsedResponse) {
-                var option = document.createElement('option');
-                option.text = option.value = learner.sys_id;
-                learners.add(option, 0);
-                setCurrentUser();
-            }
-
-            // TODO: debug why option.text is set before getLearnerName() finishes getting response
-            // var learnerOptions = document.getElementById("learners").options;
-            // var length = learnerOptions.length;
-            // for (let index = 0; index <= length; index++) {
-            //     var learnerName = getLearnerName(learnerOptions[index].value, option);
-            // }
-        }
-    };
-    client.send(requestBody);
+    // TODO: debug why option.text is set before getLearnerName() finishes getting response
+    // var learnerOptions = document.getElementById("learners").options;
+    // var length = learnerOptions.length;
+    // for (let index = 0; index <= length; index++) {
+    //     var learnerName = getLearnerName(learnerOptions[index].value, option);
+    // }
 }
 
 // TODO: update dropdown learner IDs to names
-function getLearnerName(userAccountValue, option) {
-    var requestBody = "";
+// function getLearnerName(userAccountValue, option) {
+//     var requestBody = "";
 
-    var client = new XMLHttpRequest();
+//     var client = new XMLHttpRequest();
 
-    client.open("get", `https://dev201115.service-now.com/api/now/table/sys_user?sysparm_fields=name&sys_id=${userAccountValue}`);
+//     client.open("get", `https://dev201115.service-now.com/api/now/table/sys_user?sysparm_fields=name&sys_id=${userAccountValue}`);
 
-    client.setRequestHeader('Accept', 'application/json');
-    client.setRequestHeader('Content-Type', 'application/json');
+//     client.setRequestHeader('Accept', 'application/json');
+//     client.setRequestHeader('Content-Type', 'application/json');
 
-    //Eg. UserName="admin", Password="admin" for this code sample.
-    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+//     //Eg. UserName="admin", Password="admin" for this code sample.
+//     client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
 
-    client.onreadystatechange = function() {
-        if (this.readyState == this.DONE) {
-            var name = JSON.parse(this.response)["result"][0].name;
-            option.text = name;
-        }
-    };
-    client.send(requestBody);
-}
+//     client.onreadystatechange = function() {
+//         if (this.readyState == this.DONE) {
+//             var name = JSON.parse(this.response)["result"][0].name;
+//             option.text = name;
+//         }
+//     };
+//     client.send(requestBody);
+// }
 
 function displayCourseDetails(data, isMyCourse) {
-    console.log("displaying courses");
     var table;
     if (isMyCourse) {
         table = document.getElementById("my-courses-table");
@@ -109,129 +89,59 @@ function displayCourseDetails(data, isMyCourse) {
         const button = document.createElement('button');
         button.innerText = 'Subscribe';
         button.addEventListener('click', () => {
-            subscribeToCourse(currentUser, data.sys_id);
+            if (currentUser != null) {
+                var requestBody = "{\"learner\":\"" + currentUser + "\",\"course\":\"" + data.sys_id + "\"}";
+                var requestType = "post";
+                var requestURL = "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course_subscription";
+                sendRequest(requestBody, requestType, requestURL, subscribeToCourse);
+            }
         });
         row.insertCell().appendChild(button);
     }
 }
 
-function subscribeToCourse(learner, course) {
-    if (currentUser != null) {
-        var requestBody = "{\"learner\":\"" + learner + "\",\"course\":\"" + course + "\"}";
-
-        var client = new XMLHttpRequest();
-        client.open("post", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course_subscription");
-
-        client.setRequestHeader('Accept', 'application/json');
-        client.setRequestHeader('Content-Type', 'application/json');
-
-        //Eg. UserName="admin", Password="admin" for this code sample.
-        client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
-
-        client.onreadystatechange = function() {
-            if (this.readyState == this.DONE) {
-                console.log(this.response);
-            }
-        };
-        client.send(requestBody);
-    }
+function subscribeToCourse(response) {
+    console.log(response);
 }
 
 function showMyCourses() {
-    // clear current table
+	// clear current my courses
     document.getElementById("my-courses-table").innerHTML = '';
 
-    var requestBody = "";
-    var parsedResponse;
-    var courses = [];
-
-    var client = new XMLHttpRequest();
-    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course_subscription?sysparm_fields=course&learner=" + currentUser);
-
-    client.setRequestHeader('Accept', 'application/json');
-    client.setRequestHeader('Content-Type', 'application/json');
-
-    //Eg. UserName="admin", Password="admin" for this code sample.
-    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
-
-    client.onreadystatechange = function() {
-        if (this.readyState == this.DONE) {
-            parsedResponse = JSON.parse(this.response)["result"];
-
-            if (parsedResponse.length > 0) {
-                for (const course of parsedResponse) {
-                    getCourse(course["course"].value);
-                }
-            } else {
-                console.log("no course subscriptions");
-            }
-        }
-    };
-
-    client.send(requestBody);
+    sendRequest("", "get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course_subscription?sysparm_fields=course&learner=" + currentUser, displayMyCourse);
 }
 
-function getCourse(courseId) {
-    var requestBody = "";
+function displayMyCourse(response) {
+    var parsedResponse = JSON.parse(response)["result"];
 
-    var client = new XMLHttpRequest();
-    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sys_id=" + courseId);
-    console.log("https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sys_id=" + courseId);
+    if (parsedResponse.length > 0) {
+        for (const course of parsedResponse) {
+            sendRequest("", "get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sys_id=" + course["course"].value, getCourse);
 
-    client.setRequestHeader('Accept', 'application/json');
-    client.setRequestHeader('Content-Type', 'application/json');
-
-    //Eg. UserName="admin", Password="admin" for this code sample.
-    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
-
-    client.onreadystatechange = function() {
-        if (this.readyState == this.DONE) {
-            var parsedResponse = JSON.parse(this.response)["result"][0];
-            displayCourseDetails(parsedResponse, true);
         }
-    };
-    client.send(requestBody);
+    } else {
+        console.log("no course subscriptions");
+    }
+}
+
+function getCourse(response) {
+    var parsedResponse = JSON.parse(response)["result"][0];
+    displayCourseDetails(parsedResponse, true);
 }
 
 // TODO parse course duration
 // TODO encrypt/obscure authorization
 
-// function getAllCourses() {
-//     var requestBody = "";
-//     var parsedResponse;
-
-//     var client = new XMLHttpRequest();
-//     client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id");
-
-//     client.setRequestHeader('Accept', 'application/json');
-//     client.setRequestHeader('Content-Type', 'application/json');
-
-//     //Eg. UserName="admin", Password="admin" for this code sample.
-//     client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
-
-//     client.onreadystatechange = function() {
-//         if (this.readyState == this.DONE) {
-//             parsedResponse = JSON.parse(this.response)["result"];
-//             for (const course of parsedResponse) {
-//                 displayCourseDetails(course, false);
-//             }
-//         }
-//     };
-
-//     client.send(requestBody);
-// }
-
-function getAllCourses(response) { 
-	var parsedResponse = JSON.parse(response)["result"];
-	for (const course of parsedResponse) {
+function getAllCourses(response) {
+    var parsedResponse = JSON.parse(response)["result"];
+    for (const course of parsedResponse) {
         displayCourseDetails(course, false);
     }
 }
 
-// getAllCourses();
-sendRequest("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id", getAllCourses);
-// getAllCourses();
-populateLearnerOptions();]]></client_script>
+sendRequest("", "get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id", getAllCourses);
+
+sendRequest("", "get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_learner?sysparm_fields=sys_id%2Cuser_account", populateLearnerOptions);]]></client_script>
         <description/>
         <direct>false</direct>
         <endpoint>x_quo_coursehub_course-list.do</endpoint>
@@ -281,7 +191,6 @@ populateLearnerOptions();]]></client_script>
         <table id="my-courses-table">
         </table>
 
-
     </body>
 </j:jelly>]]></html>
         <name>course-list</name>
@@ -290,14 +199,14 @@ populateLearnerOptions();]]></client_script>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2024-09-29 13:46:03</sys_created_on>
         <sys_id>e539c3b7c3749210b026d50d050131f7</sys_id>
-        <sys_mod_count>154</sys_mod_count>
+        <sys_mod_count>165</sys_mod_count>
         <sys_name>course-list</sys_name>
         <sys_package display_value="CourseHub" source="x_quo_coursehub">d7affc501bf0ded0afce657a234bcb67</sys_package>
         <sys_policy/>
         <sys_scope display_value="CourseHub">d7affc501bf0ded0afce657a234bcb67</sys_scope>
         <sys_update_name>sys_ui_page_e539c3b7c3749210b026d50d050131f7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2024-09-30 11:19:12</sys_updated_on>
+        <sys_updated_on>2024-09-30 11:38:00</sys_updated_on>
     </sys_ui_page>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>e539c3b7c3749210b026d50d050131f7</id>
