@@ -9,7 +9,27 @@ function setCurrentUser() {
     var user = selection.options[selection.selectedIndex].value;
     currentUser = user;
     currentUserText.innerHTML = "Current learner: " + currentUser;
-    //TODO reset my courses
+}
+
+function sendRequest(requestType, requestURL, onSuccessFunction) {
+    var requestBody = "";
+
+    var client = new XMLHttpRequest();
+    client.open(requestType, requestURL);
+
+    client.setRequestHeader('Accept', 'application/json');
+    client.setRequestHeader('Content-Type', 'application/json');
+
+    //Eg. UserName="admin", Password="admin" for this code sample.
+    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+
+    client.onreadystatechange = function() {
+        if (this.readyState == this.DONE) {
+            onSuccessFunction(this.response);
+        }
+    };
+
+    client.send(requestBody);
 }
 
 function populateLearnerOptions() {
@@ -40,14 +60,8 @@ function populateLearnerOptions() {
             // TODO: debug why option.text is set before getLearnerName() finishes getting response
             // var learnerOptions = document.getElementById("learners").options;
             // var length = learnerOptions.length;
-            // console.log(length);
             // for (let index = 0; index <= length; index++) {
-            //     console.log(learnerOptions[index].text);
-            //     var learnerName = getLearnerName(learnerOptions[index].value);
-            //     console.log("learnerName = " + learnerName);
-
-            //     option.text = learnerName;
-            //     console.log("option.text = " + option.text);
+            //     var learnerName = getLearnerName(learnerOptions[index].value, option);
             // }
         }
     };
@@ -55,9 +69,8 @@ function populateLearnerOptions() {
 }
 
 // TODO: update dropdown learner IDs to names
-function getLearnerName(userAccountValue) {
+function getLearnerName(userAccountValue, option) {
     var requestBody = "";
-    var name;
 
     var client = new XMLHttpRequest();
 
@@ -71,9 +84,8 @@ function getLearnerName(userAccountValue) {
 
     client.onreadystatechange = function() {
         if (this.readyState == this.DONE) {
-            name = JSON.parse(this.response)["result"][0].name;
-            console.log(name)
-            return name;
+            var name = JSON.parse(this.response)["result"][0].name;
+            option.text = name;
         }
     };
     client.send(requestBody);
@@ -145,7 +157,6 @@ function showMyCourses() {
     client.onreadystatechange = function() {
         if (this.readyState == this.DONE) {
             parsedResponse = JSON.parse(this.response)["result"];
-            console.log(parsedResponse);
 
             if (parsedResponse.length > 0) {
                 for (const course of parsedResponse) {
@@ -176,7 +187,6 @@ function getCourse(courseId) {
     client.onreadystatechange = function() {
         if (this.readyState == this.DONE) {
             var parsedResponse = JSON.parse(this.response)["result"][0];
-            console.log(parsedResponse);
             displayCourseDetails(parsedResponse, true);
         }
     };
@@ -186,32 +196,41 @@ function getCourse(courseId) {
 // TODO parse course duration
 // TODO encrypt/obscure authorization
 
-function getAllCourses() {
-    var requestBody = "";
-    var parsedResponse;
+// function getAllCourses() {
+//     var requestBody = "";
+//     var parsedResponse;
 
-    var client = new XMLHttpRequest();
-    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id");
+//     var client = new XMLHttpRequest();
+//     client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id");
 
-    client.setRequestHeader('Accept', 'application/json');
-    client.setRequestHeader('Content-Type', 'application/json');
+//     client.setRequestHeader('Accept', 'application/json');
+//     client.setRequestHeader('Content-Type', 'application/json');
 
-    //Eg. UserName="admin", Password="admin" for this code sample.
-    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+//     //Eg. UserName="admin", Password="admin" for this code sample.
+//     client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
 
-    client.onreadystatechange = function() {
-        if (this.readyState == this.DONE) {
-            parsedResponse = JSON.parse(this.response)["result"];
-            for (const course of parsedResponse) {
-                displayCourseDetails(course, false);
-            }
-        }
-    };
+//     client.onreadystatechange = function() {
+//         if (this.readyState == this.DONE) {
+//             parsedResponse = JSON.parse(this.response)["result"];
+//             for (const course of parsedResponse) {
+//                 displayCourseDetails(course, false);
+//             }
+//         }
+//     };
 
-    client.send(requestBody);
+//     client.send(requestBody);
+// }
+
+function getAllCourses(response) { 
+	var parsedResponse = JSON.parse(response)["result"];
+	for (const course of parsedResponse) {
+        displayCourseDetails(course, false);
+    }
 }
 
-getAllCourses();
+// getAllCourses();
+sendRequest("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id", getAllCourses);
+// getAllCourses();
 populateLearnerOptions();]]></client_script>
         <description/>
         <direct>false</direct>
@@ -271,14 +290,14 @@ populateLearnerOptions();]]></client_script>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2024-09-29 13:46:03</sys_created_on>
         <sys_id>e539c3b7c3749210b026d50d050131f7</sys_id>
-        <sys_mod_count>146</sys_mod_count>
+        <sys_mod_count>154</sys_mod_count>
         <sys_name>course-list</sys_name>
         <sys_package display_value="CourseHub" source="x_quo_coursehub">d7affc501bf0ded0afce657a234bcb67</sys_package>
         <sys_policy/>
         <sys_scope display_value="CourseHub">d7affc501bf0ded0afce657a234bcb67</sys_scope>
         <sys_update_name>sys_ui_page_e539c3b7c3749210b026d50d050131f7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2024-09-30 10:43:57</sys_updated_on>
+        <sys_updated_on>2024-09-30 11:19:12</sys_updated_on>
     </sys_ui_page>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>e539c3b7c3749210b026d50d050131f7</id>
