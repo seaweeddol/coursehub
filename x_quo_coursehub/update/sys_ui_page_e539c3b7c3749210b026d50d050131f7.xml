@@ -8,7 +8,8 @@ function setCurrentUser() {
     var selection = document.getElementById("learners");
     var user = selection.options[selection.selectedIndex].value;
     currentUser = user;
-	currentUserText.innerHTML = "Current learner: " + currentUser;
+    currentUserText.innerHTML = "Current learner: " + currentUser;
+    //TODO reset my courses
 }
 
 function populateLearnerOptions() {
@@ -30,7 +31,6 @@ function populateLearnerOptions() {
             var learners = document.getElementById("learners");
 
             for (const learner of parsedResponse) {
-                console.log(learner);
                 var option = document.createElement('option');
                 option.text = option.value = learner.sys_id;
                 learners.add(option, 0);
@@ -79,31 +79,33 @@ function getLearnerName(userAccountValue) {
     client.send(requestBody);
 }
 
-function displayCourseDetails(data) {
-    var table = document.getElementById("course-list-table");
+function displayCourseDetails(data, isMyCourse) {
+    console.log("displaying courses");
+    var table;
+    if (isMyCourse) {
+        table = document.getElementById("my-courses-table");
+    } else {
+        table = document.getElementById("course-list-table");
+    }
     var row = table.insertRow();
 
     row.insertCell().innerHTML = data.title;
     row.insertCell().innerHTML = data.description;
     row.insertCell().innerHTML = data.duration;
 
-    const button = document.createElement('button');
-    button.innerText = 'Subscribe';
-    button.addEventListener('click', () => {
-        console.log("learner: " + currentUser);
-        console.log("course: " + data.sys_id);
-        subscribeToCourse(currentUser, data.sys_id);
-    });
-    row.insertCell().appendChild(button);
+    if (!isMyCourse) {
+        const button = document.createElement('button');
+        button.innerText = 'Subscribe';
+        button.addEventListener('click', () => {
+            subscribeToCourse(currentUser, data.sys_id);
+        });
+        row.insertCell().appendChild(button);
+    }
 }
 
 function subscribeToCourse(learner, course) {
     if (currentUser != null) {
-        console.log("learner: " + learner);
-        console.log("course: " + course);
-
         var requestBody = "{\"learner\":\"" + learner + "\",\"course\":\"" + course + "\"}";
-        console.log(requestBody);
 
         var client = new XMLHttpRequest();
         client.open("post", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course_subscription");
@@ -123,32 +125,93 @@ function subscribeToCourse(learner, course) {
     }
 }
 
+function showMyCourses() {
+    // clear current table
+    document.getElementById("my-courses-table").innerHTML = '';
+
+    var requestBody = "";
+    var parsedResponse;
+    var courses = [];
+
+    var client = new XMLHttpRequest();
+    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course_subscription?sysparm_fields=course&learner=" + currentUser);
+
+    client.setRequestHeader('Accept', 'application/json');
+    client.setRequestHeader('Content-Type', 'application/json');
+
+    //Eg. UserName="admin", Password="admin" for this code sample.
+    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+
+    client.onreadystatechange = function() {
+        if (this.readyState == this.DONE) {
+            parsedResponse = JSON.parse(this.response)["result"];
+            console.log(parsedResponse);
+
+            if (parsedResponse.length > 0) {
+                for (const course of parsedResponse) {
+                    getCourse(course["course"].value);
+                }
+            } else {
+                console.log("no course subscriptions");
+            }
+        }
+    };
+
+    client.send(requestBody);
+}
+
+function getCourse(courseId) {
+    var requestBody = "";
+
+    var client = new XMLHttpRequest();
+    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sys_id=" + courseId);
+    console.log("https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sys_id=" + courseId);
+
+    client.setRequestHeader('Accept', 'application/json');
+    client.setRequestHeader('Content-Type', 'application/json');
+
+    //Eg. UserName="admin", Password="admin" for this code sample.
+    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+
+    client.onreadystatechange = function() {
+        if (this.readyState == this.DONE) {
+            var parsedResponse = JSON.parse(this.response)["result"][0];
+            console.log(parsedResponse);
+            displayCourseDetails(parsedResponse, true);
+        }
+    };
+    client.send(requestBody);
+}
+
 // TODO parse course duration
 // TODO encrypt/obscure authorization
 
-var requestBody = "";
-var parsedResponse;
+function getAllCourses() {
+    var requestBody = "";
+    var parsedResponse;
 
-var client = new XMLHttpRequest();
-client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id");
+    var client = new XMLHttpRequest();
+    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id");
 
-client.setRequestHeader('Accept', 'application/json');
-client.setRequestHeader('Content-Type', 'application/json');
+    client.setRequestHeader('Accept', 'application/json');
+    client.setRequestHeader('Content-Type', 'application/json');
 
-//Eg. UserName="admin", Password="admin" for this code sample.
-client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+    //Eg. UserName="admin", Password="admin" for this code sample.
+    client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
 
-client.onreadystatechange = function() {
-    if (this.readyState == this.DONE) {
-        parsedResponse = JSON.parse(this.response)["result"];
-        for (const course of parsedResponse) {
-            displayCourseDetails(course);
+    client.onreadystatechange = function() {
+        if (this.readyState == this.DONE) {
+            parsedResponse = JSON.parse(this.response)["result"];
+            for (const course of parsedResponse) {
+                displayCourseDetails(course, false);
+            }
         }
-    }
-};
+    };
 
-client.send(requestBody);
+    client.send(requestBody);
+}
 
+getAllCourses();
 populateLearnerOptions();]]></client_script>
         <description/>
         <direct>false</direct>
@@ -184,8 +247,9 @@ populateLearnerOptions();]]></client_script>
 
         <button type="button" onclick="setCurrentUser()">Set Current Learner</button>
 
-        <button type="button" onclick="setCurrentUser()">View My Courses</button>
+        <button type="button" onclick="showMyCourses()">View My Courses</button>
 
+        <br/>
         <table id="course-list-table">
             <tr>
                 <th>Course Title</th>
@@ -194,17 +258,11 @@ populateLearnerOptions();]]></client_script>
                 <th>Subscribe to Course</th>
             </tr>
         </table>
-        <header>
+        <br/>
+        <table id="my-courses-table">
+        </table>
 
-        </header>
 
-        <section>
-
-        </section>
-
-        <script>
-
-        </script>
     </body>
 </j:jelly>]]></html>
         <name>course-list</name>
@@ -213,14 +271,14 @@ populateLearnerOptions();]]></client_script>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2024-09-29 13:46:03</sys_created_on>
         <sys_id>e539c3b7c3749210b026d50d050131f7</sys_id>
-        <sys_mod_count>125</sys_mod_count>
+        <sys_mod_count>146</sys_mod_count>
         <sys_name>course-list</sys_name>
         <sys_package display_value="CourseHub" source="x_quo_coursehub">d7affc501bf0ded0afce657a234bcb67</sys_package>
         <sys_policy/>
         <sys_scope display_value="CourseHub">d7affc501bf0ded0afce657a234bcb67</sys_scope>
         <sys_update_name>sys_ui_page_e539c3b7c3749210b026d50d050131f7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2024-09-30 09:51:28</sys_updated_on>
+        <sys_updated_on>2024-09-30 10:43:57</sys_updated_on>
     </sys_ui_page>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>e539c3b7c3749210b026d50d050131f7</id>
