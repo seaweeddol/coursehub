@@ -2,11 +2,13 @@
     <sys_ui_page action="INSERT_OR_UPDATE">
         <category>general</category>
         <client_script><![CDATA[var currentUser;
+var currentUserText = document.getElementById("currentLearnerText");
 
 function setCurrentUser() {
     var selection = document.getElementById("learners");
     var user = selection.options[selection.selectedIndex].value;
     currentUser = user;
+	currentUserText.innerHTML = "Current learner: " + currentUser;
 }
 
 function populateLearnerOptions() {
@@ -32,7 +34,7 @@ function populateLearnerOptions() {
                 var option = document.createElement('option');
                 option.text = option.value = learner.sys_id;
                 learners.add(option, 0);
-                currentUser = option.value;
+                setCurrentUser();
             }
 
             // TODO: debug why option.text is set before getLearnerName() finishes getting response
@@ -173,13 +175,16 @@ populateLearnerOptions();]]></client_script>
     </style>
 
     <body>
+        <div id="currentLearnerText"></div>
 
-        <label for="learners">Active Learner: </label>
+        <label for="learners">Select Learner: </label>
 
         <select name="learners" id="learners">
         </select>
 
         <button type="button" onclick="setCurrentUser()">Set Current Learner</button>
+
+        <button type="button" onclick="setCurrentUser()">View My Courses</button>
 
         <table id="course-list-table">
             <tr>
@@ -208,14 +213,14 @@ populateLearnerOptions();]]></client_script>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2024-09-29 13:46:03</sys_created_on>
         <sys_id>e539c3b7c3749210b026d50d050131f7</sys_id>
-        <sys_mod_count>118</sys_mod_count>
+        <sys_mod_count>125</sys_mod_count>
         <sys_name>course-list</sys_name>
         <sys_package display_value="CourseHub" source="x_quo_coursehub">d7affc501bf0ded0afce657a234bcb67</sys_package>
         <sys_policy/>
         <sys_scope display_value="CourseHub">d7affc501bf0ded0afce657a234bcb67</sys_scope>
         <sys_update_name>sys_ui_page_e539c3b7c3749210b026d50d050131f7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2024-09-30 09:31:24</sys_updated_on>
+        <sys_updated_on>2024-09-30 09:51:28</sys_updated_on>
     </sys_ui_page>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>e539c3b7c3749210b026d50d050131f7</id>
