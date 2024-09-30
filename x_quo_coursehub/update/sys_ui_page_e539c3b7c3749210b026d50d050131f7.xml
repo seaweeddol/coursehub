@@ -14,7 +14,7 @@ function populateLearnerOptions() {
     var parsedResponse;
 
     var client = new XMLHttpRequest();
-    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_learner?sysparm_fields=user_account");
+    client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_learner?sysparm_fields=sys_id%2Cuser_account");
 
     client.setRequestHeader('Accept', 'application/json');
     client.setRequestHeader('Content-Type', 'application/json');
@@ -28,9 +28,11 @@ function populateLearnerOptions() {
             var learners = document.getElementById("learners");
 
             for (const learner of parsedResponse) {
+                console.log(learner);
                 var option = document.createElement('option');
-                option.text = option.value = learner.user_account.value;
+                option.text = option.value = learner.sys_id;
                 learners.add(option, 0);
+                currentUser = option.value;
             }
 
             // TODO: debug why option.text is set before getLearnerName() finishes getting response
@@ -57,7 +59,7 @@ function getLearnerName(userAccountValue) {
 
     var client = new XMLHttpRequest();
 
-    client.open("get", "https://dev201115.service-now.com/api/now/table/sys_user?sysparm_fields=name&sys_id=" + userAccountValue);
+    client.open("get", `https://dev201115.service-now.com/api/now/table/sys_user?sysparm_fields=name&sys_id=${userAccountValue}`);
 
     client.setRequestHeader('Accept', 'application/json');
     client.setRequestHeader('Content-Type', 'application/json');
@@ -83,16 +85,40 @@ function displayCourseDetails(data) {
     row.insertCell().innerHTML = data.description;
     row.insertCell().innerHTML = data.duration;
 
-    var a = document.createElement('a');
-    var linkText = document.createTextNode("Subscribe");
-    a.appendChild(linkText);
-    a.title = "Subscribe";
-    a.href = "http://example.com";
-    row.insertCell().appendChild(a);
+    const button = document.createElement('button');
+    button.innerText = 'Subscribe';
+    button.addEventListener('click', () => {
+        console.log("learner: " + currentUser);
+        console.log("course: " + data.sys_id);
+        subscribeToCourse(currentUser, data.sys_id);
+    });
+    row.insertCell().appendChild(button);
 }
 
-function subscribeToCourse() {
-    // if currentUser is not null, 
+function subscribeToCourse(learner, course) {
+    if (currentUser != null) {
+        console.log("learner: " + learner);
+        console.log("course: " + course);
+
+        var requestBody = "{\"learner\":\"" + learner + "\",\"course\":\"" + course + "\"}";
+        console.log(requestBody);
+
+        var client = new XMLHttpRequest();
+        client.open("post", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course_subscription");
+
+        client.setRequestHeader('Accept', 'application/json');
+        client.setRequestHeader('Content-Type', 'application/json');
+
+        //Eg. UserName="admin", Password="admin" for this code sample.
+        client.setRequestHeader('Authorization', 'Basic ' + btoa('admin' + ':' + 'mE7QuyPj3=K!'));
+
+        client.onreadystatechange = function() {
+            if (this.readyState == this.DONE) {
+                console.log(this.response);
+            }
+        };
+        client.send(requestBody);
+    }
 }
 
 // TODO parse course duration
@@ -102,7 +128,7 @@ var requestBody = "";
 var parsedResponse;
 
 var client = new XMLHttpRequest();
-client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription");
+client.open("get", "https://dev201115.service-now.com/api/now/table/x_quo_coursehub_course?sysparm_fields=duration%2Ctitle%2Cdescription%sys_id");
 
 client.setRequestHeader('Accept', 'application/json');
 client.setRequestHeader('Content-Type', 'application/json');
@@ -182,14 +208,14 @@ populateLearnerOptions();]]></client_script>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2024-09-29 13:46:03</sys_created_on>
         <sys_id>e539c3b7c3749210b026d50d050131f7</sys_id>
-        <sys_mod_count>101</sys_mod_count>
+        <sys_mod_count>118</sys_mod_count>
         <sys_name>course-list</sys_name>
         <sys_package display_value="CourseHub" source="x_quo_coursehub">d7affc501bf0ded0afce657a234bcb67</sys_package>
         <sys_policy/>
         <sys_scope display_value="CourseHub">d7affc501bf0ded0afce657a234bcb67</sys_scope>
         <sys_update_name>sys_ui_page_e539c3b7c3749210b026d50d050131f7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2024-09-29 17:39:03</sys_updated_on>
+        <sys_updated_on>2024-09-30 09:31:24</sys_updated_on>
     </sys_ui_page>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>e539c3b7c3749210b026d50d050131f7</id>
